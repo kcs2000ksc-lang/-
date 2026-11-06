@@ -24,6 +24,17 @@ button:disabled{opacity:.6;cursor:wait}
 #editor[hidden],#login[hidden]{display:none!important}
 footer{font-size:12px;color:var(--muted);margin-top:30px}
 @media(max-width:550px){.grid{grid-template-columns:1fr}.top{align-items:start}#authrow{flex-wrap:wrap}#authrow label{width:100%;flex:auto}}
+
+#bulkInput{min-height:170px;line-height:1.6}
+#bulkPreview{max-height:340px;overflow:auto;margin-top:12px}
+.bulkItem{display:flex;gap:10px;align-items:flex-start;padding:10px;margin:7px 0;border:1px solid #586952;border-radius:8px;background:#222e23}
+.bulkItem input{width:20px;height:20px;flex:none;margin:3px 0 0}
+.bulkItem b{display:block;margin-bottom:5px;font-size:14px}
+.bulkItem small{color:var(--muted);line-height:1.6}
+.bulkItem label{flex:1;min-width:0;margin:0;cursor:pointer}
+#bulkSave:disabled{opacity:.5}
+#bulkMode{max-width:420px}
+
 </style></head><body>
 <main>
 <header class="top"><div><h1>📺 골목 잉토방 · 경기 관리</h1><p class="small">관리자가 경기를 입력하면 이용자들의 TV와 경기표에 반영됩니다.</p></div><a href="/" target="_blank" rel="noopener">3D 토토방 열기</a></header>
@@ -34,6 +45,21 @@ footer{font-size:12px;color:var(--muted);margin-top:30px}
 <p class="small">일반 이용자는 등록할 수 없습니다. 암호는 주소나 게시글에 공유하지 마십시오.</p>
 </section>
 <div id="editor" hidden>
+
+<section class="card" id="bulkCard">
+  <h2>📋 경기 여러 개 한 번에 등록</h2>
+  <p class="small">에펨코리아 잉토픽에서 경기 제목 여러 개를 복사해 아래에 한 번에 붙여넣으십시오. 줄바꿈된 제목도 인식합니다. URL이 포함된 경우 원문 링크도 함께 등록합니다.</p>
+  <label for="bulkInput">경기 목록 붙여넣기</label>
+  <textarea id="bulkInput" maxlength="30000" placeholder="[마감 11/6 17:39] 호주 A-리그 남자축구 :: 시드니 FC (-0.5) vs 센트럴 코스트 :: 11/6 17:40 경기 [19]&#10;[마감 11/6 18:59] WKBL :: 하나은행 (+1.5) vs KB스타즈 :: 11/6 19:00 경기 [21]"></textarea>
+  <div class="controls"><button id="bulkAnalyze" class="primary" type="button">붙여넣은 경기 분석</button><button id="bulkClear" type="button">내용 지우기</button></div>
+  <div id="bulkSummary" class="small" role="status"></div>
+  <div id="bulkPreview"></div>
+  <div class="grid" style="margin-top:13px">
+    <div><label for="bulkMode">등록 방식</label><select id="bulkMode"><option value="append">기존 경기 유지 + 새 경기 추가</option><option value="replace">기존 경기 모두 교체</option></select></div>
+    <div style="display:flex;align-items:end"><button id="bulkSave" class="primary" type="button" disabled>선택한 경기 한 번에 등록</button></div>
+  </div>
+  <p class="small">한 번에 최대 45경기 등록 가능합니다. 인식 결과를 확인한 후 저장하세요. 외부 게시판 자동 수집은 아닙니다.</p>
+</section>
 <section class="card"><div class="top"><h2>경기 추가 · 수정</h2><button id="logout" type="button">로그아웃</button></div>
 <form id="matchForm" class="grid">
 <div><label for="sport">종목·리그 *</label><input id="sport" placeholder="예: KBL 남자농구" maxlength="90" required></div>
@@ -112,6 +138,93 @@ function render(){
   item.appendChild(buttons);list.appendChild(item);
  });
 }
+
+// Bulk entry: parse several public pointplay post titles from one clipboard paste.
+let bulkItems=[];
+function parsePastedMatches(input){
+ const source=String(input||'').replace(/\r/g,'').replace(/\u200b/g,'');
+ const heading=/\[(?:마감|진행|오픈|시작|종료)(?:\s|\])/;
+ const chunks=heading.test(source)
+  ? source.split(/(?=\[(?:마감|진행|오픈|시작|종료)(?:\s|\]))/).filter(t=>heading.test(t.slice(0,26)))
+  : source.split(/\n+/).filter(t=>/(?:\s+vs\.?\s+|::)/i.test(t));
+ const result=[],seen=new Set();
+ for(const rawChunk of chunks){
+  let entry=rawChunk.trim();
+  if(!entry)continue;
+  const urlMatch=entry.match(/https?:\/\/(?:(?:m|www)\.)?fmkorea\.com\/\d{6,}(?:[^\s"'<>]*)?/i);
+  const url=urlMatch?urlMatch[0].replace(/[.,;)\]]+$/,''):'';
+  let title=entry.split(/\n(?=(?:\d{1,3}\s*(?:분|시간|일)\s*전|진행중|마감|조회|댓글|추천|소녀|관리자))/)[0];
+  title=title.replace(/\s+/g,' ').replace(/^\d{1,3}[.)]\s*/,'').trim();
+  const deadline=title.match(/^\[\s*마감\s*(\d{1,2}\/\d{1,2}\s+\d{1,2}:\d{2})\s*\]/);
+  title=title.replace(/^\[(?:마감|진행|오픈|시작|종료)[^\]]{0,65}\]\s*/,'');
+  const sections=title.split(/\s*::\s*/);
+  const league=sections.length>=2?sections[0].trim():'잉토 경기';
+  let matchup=sections.length>=2?sections[1].trim():title;
+  matchup=matchup.replace(/\s*#연장포함#\s*/g,' ').replace(/\s*\[\d+\]\s*$/,'').trim();
+  const sides=matchup.match(/^(.*?)\s+vs\.?\s+(.*?)$/i);
+  if(!sides)continue;
+  const a=sides[1].trim().replace(/\s+/g,' ');
+  const b=sides[2].trim().replace(/\s+/g,' ').replace(/\s+(?:\d{1,2}\/\d{1,2}\s+\d{1,2}:\d{2}\s+경기).*$/,'');
+  if(!a||!b||a.length>80||b.length>80)continue;
+  const remainder=sections.slice(2).join(' ')||title;
+  const gameTime=remainder.match(/(\d{1,2}\/\d{1,2})\s+(\d{1,2}:\d{2})/);
+  const closing=deadline?.[1]||'';
+  const market=/언\/?오버|언더|오버/i.test(league+' '+matchup)?'언더·오버':/[+\-]\d+(?:\.\d+)?/.test(matchup)?'핸디캡':'승패';
+  const desc=[closing?'마감 '+closing:'',/#연장포함#/.test(title)?'연장 포함':''].filter(Boolean).join(' · ');
+  const date=gameTime?.[1]||closing.split(' ')[0]||'';
+  const time=gameTime?.[2]||'';
+  const key=(url||[league,a,b,date,time].join('::')).toLowerCase();
+  if(seen.has(key))continue;
+  seen.add(key);
+  result.push({
+   id:'bulk-'+Date.now().toString(36)+'-'+result.length+'-'+Math.random().toString(36).slice(2,7),
+   sport:league.slice(0,90),a:a.slice(0,80),b:b.slice(0,80),
+   date,time,market,desc:desc.slice(0,240),url,comments:0
+  });
+  if(result.length>=45)break;
+ }
+ return result;
+}
+function bulkRender(){
+ const list=el('bulkPreview');list.replaceChildren();
+ el('bulkSummary').textContent=bulkItems.length?bulkItems.length+'경기 인식됨. 체크 해제하면 해당 경기를 제외합니다.':'경기를 인식하지 못했습니다. 제목에 “A vs B”가 있는지 확인하세요.';
+ for(const [i,m] of bulkItems.entries()){
+  const row=document.createElement('div');row.className='bulkItem';
+  const input=document.createElement('input');input.type='checkbox';input.checked=true;input.id='bulkCheck'+i;
+  const label=document.createElement('label');label.htmlFor=input.id;
+  const name=document.createElement('b');name.textContent=m.a+' VS '+m.b;
+  const detail=document.createElement('small');detail.textContent=[m.sport,m.date,m.time,m.market,m.desc].filter(Boolean).join(' · ');
+  label.append(name,detail);row.append(input,label);list.append(row);
+ }
+ el('bulkSave').disabled=bulkItems.length===0;
+}
+el('bulkAnalyze').onclick=()=>{
+ bulkItems=parsePastedMatches(el('bulkInput').value);
+ bulkRender();
+ if(!bulkItems.length)say('경기 제목을 인식하지 못했습니다. 제목 여러 줄을 복사해서 다시 붙여넣으십시오.',true);
+ else say(bulkItems.length+'개 경기를 인식했습니다. 아래에서 확인 후 한 번에 등록하세요.');
+};
+el('bulkClear').onclick=()=>{el('bulkInput').value='';bulkItems=[];bulkRender();};
+el('bulkSave').onclick=()=>{
+ if(busy)return;
+ const selected=bulkItems.filter((_,i)=>el('bulkCheck'+i)?.checked);
+ if(!selected.length){say('등록할 경기를 선택해 주세요.',true);return;}
+ const replace=el('bulkMode').value==='replace';
+ let next=replace?[]:matches.slice();
+ const keys=new Set(next.map(m=>m.url||[m.sport,m.a,m.b,m.date,m.time].join('::').toLowerCase()));
+ let added=0;
+ for(const item of selected){
+  const key=item.url||[item.sport,item.a,item.b,item.date,item.time].join('::').toLowerCase();
+  if(keys.has(key))continue;
+  if(next.length>=45){say('45경기 제한을 초과합니다. 기존 경기를 삭제하거나 교체 방식을 선택하세요.',true);return;}
+  next.push(item);keys.add(key);added++;
+ }
+ if(!added){say('이미 등록된 경기이거나 중복된 항목입니다.',true);return;}
+ if(replace&&!confirm('기존 경기 모두 교체하고 '+added+'개를 등록하시겠습니까?'))return;
+ submitMatches(next,added+'개 경기를 일괄 등록했습니다. 모든 이용자의 TV에 반영됩니다.');
+ bulkItems=[];el('bulkPreview').replaceChildren();el('bulkSummary').textContent='';el('bulkSave').disabled=true;
+};
+
 el('loginForm').addEventListener('submit',async ev=>{
  ev.preventDefault();token=clean(el('password').value);
  try{await read();setLoggedIn(true);say('관리자 로그인이 완료됐습니다.');el('password').value='';}

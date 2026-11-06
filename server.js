@@ -152,10 +152,31 @@ const server=http.createServer((req,res)=>{
     res.end(JSON.stringify({matches:feedLive?currentMatches:[],live:feedLive,manual:boardMode==='manual',source:feedSource,sourceUrl:POINTPLAY_URL,updatedAt:feedUpdatedAt,error:feedError,collectorConfigured:!!process.env.FI_KEY,refreshMinutes:process.env.FI_KEY?60:10}));
     return;
   }
+  if(url.pathname==='/api/admin/mode') {
+    if(!isAdmin(req)){json(res,403,{message:'관리자 암호가 올바르지 않습니다.'});return;}
+    if(req.method!=='POST'){json(res,405,{message:'지원하지 않는 요청입니다.'});return;}
+    let input='',size=0;
+    req.on('data',chunk=>{size+=chunk.length;if(size>4000){req.destroy();return;}input+=chunk;});
+    req.on('end',async()=>{
+      const obj=safeJson(input);
+      if(obj?.mode!=='auto'){json(res,400,{message:'자동 수집 모드만 지원합니다.'});return;}
+      if(!process.env.FI_KEY){json(res,409,{message:'외부 수집 API 키가 설정되지 않았습니다.'});return;}
+      try {
+        if(db)await db.query('DELETE FROM ingto_manual_board WHERE id=1');
+        else try{fs.unlinkSync(LOCAL_SAVE);}catch(e){if(e.code!=='ENOENT')throw e;}
+        boardMode='auto';currentMatches=[];feedLive=false;feedError='';
+        feedSource='외부 데이터 수집 준비 중';feedUpdatedAt=null;feedLastAttempt=0;nextAllowedAttempt=0;
+        broadcast({t:'feed_updated',source:'auto',updatedAt:null,count:0});
+        json(res,200,{ok:true,mode:boardMode,collectorConfigured:true});
+        refreshFeed().catch(e=>console.error('Third-party feed error',e));
+      }catch(e){console.error('Mode switch failed',e.message);json(res,503,{message:'자동 모드로 전환하지 못했습니다.'});}
+    });
+    return;
+  }
   if(url.pathname==='/api/admin/events'){
     if(!isAdmin(req)){json(res,403,{message:'관리자 암호가 올바르지 않습니다.'});return;}
     if(req.method==='GET'){
-      json(res,200,{matches:boardMode==='manual'?currentMatches:[],updatedAt:feedUpdatedAt,source:feedSource,persistent:!!db,mode:boardMode});
+      json(res,200,{matches:boardMode==='manual'?currentMatches:[],updatedAt:feedUpdatedAt,source:feedSource,persistent:!!db,mode:boardMode,collectorConfigured:!!process.env.FI_KEY});
       return;
     }
     if(req.method!=='POST'){json(res,405,{message:'지원하지 않는 요청입니다.'});return;}

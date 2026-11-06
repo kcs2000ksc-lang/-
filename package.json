@@ -10,6 +10,7 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "cheerio": "1.0.0"
   }
 }

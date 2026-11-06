@@ -16,6 +16,27 @@
 #chatlog{flex:1;overflow:auto;padding:12px;font-size:12px;line-height:1.7;overflow-wrap:anywhere}#chatlog .sys{color:#b5bd9c}#chatlog b{color:#d8ecad}#chatForm{display:flex;padding:9px;border-top:1px solid #5a6856;gap:6px}#chatInput{min-width:0;flex:1;background:#10170f;border:1px solid #5b6655;border-radius:6px;color:#fff;padding:9px;font-size:13px}#chatForm button{background:#dce69d;border:0;color:#202819;font-weight:900;padding:6px 10px;border-radius:6px}
 #chatpanel.minimized{height:auto}#chatpanel.minimized #chatlog,#chatpanel.minimized #chatForm{display:none}
 @media(pointer:coarse){#chatpanel{right:10px;bottom:108px;width:min(296px,calc(100vw - 20px));height:225px}#roomOnline{top:87px;right:10px;font-size:10px}}@media(max-width:520px){#chatpanel{height:180px}#roomOnline{top:69px}}
+
+/* v2 mobile layout: counter below header, compact chat on right above action keys */
+@media (pointer:coarse), (max-width:700px) {
+  #roomOnline { top:124px; right:10px; z-index:7; font-size:11px; padding:7px 10px; }
+  #chatpanel { right:12px; bottom:216px; width:min(296px,calc(100vw - 24px)); height:230px; }
+  #chatpanel.minimized { width:62px; height:62px; border-radius:50%; box-shadow:0 5px 20px #000a; }
+  #chatpanel.minimized #chatHeader { padding:0; border:0; display:block; width:100%; height:100%; }
+  #chatpanel.minimized #chatHeader .chatTitle {display:none;}
+  #chatpanel.minimized #chatHeader #chatToggle {
+    display:flex; align-items:center; justify-content:center; width:100%;height:100%;padding:0;
+    border-radius:50%; font-size:0; background:#2d4935; border:1px solid #b5c59c;
+  }
+  #chatpanel.minimized #chatHeader #chatToggle::after {content:"💬";font-size:27px;line-height:1;}
+  #chatpanel:not(.minimized) #chatHeader .chatTitle{display:inline}
+  #chatpanel:not(.minimized) #chatHeader {font-size:13px;}
+}
+@media (pointer:coarse) and (max-height:600px) {
+  #roomOnline{top:100px}
+  #chatpanel{bottom:130px;height:190px}
+}
+
 </style></head><body>
 <div id="fallback"><div><h1>🏚️ 골목 잉토방</h1><p>3D 공간을 불러오는 중입니다.<br>인터넷이 연결되어 있어야 3D 엔진이 실행됩니다.</p></div></div>
 <div id="hud"><div class="top"><div class="brand"><span class="brand-logo">📺</span><div><strong>골목 잉토방</strong><small>동네 구석의 허름한 경기분석방</small></div></div><div class="actions"><button class="action" id="allBtn">📋 전체 경기표</button><button class="action" id="feedBtn">⚙️ 실시간 연동</button><button class="action main" id="drinkBtn">☕ 물 · 믹스커피</button></div></div><div id="near">E · 조사하기</div><div class="bottom"><div class="keyhelp"><b>W A S D</b> 이동 &nbsp; / &nbsp; <b>마우스 드래그</b> 시선 회전<br><b>E</b> TV · 정수기 상호작용 &nbsp; / &nbsp; <b>TV 클릭</b> 경기 분석</div><div class="keyhelp right-help"><span class="chip" id="dataChip">예시 데이터</span><b>2026.11.06 경기표</b><br>에펨코리아 실시간 게시글 연결 전 단계</div></div></div>
@@ -23,7 +44,7 @@
 <div class="modalwrap" id="modalwrap"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-head"><h2 id="modalTitle">경기표</h2><button class="close" id="modalClose" aria-label="닫기">×</button></div><div class="modal-body" id="modalBody"></div></section></div>
 
 <div id="roomOnline">● 접속 서버 확인 중</div>
-<section id="chatpanel" class="minimized" aria-label="실시간 채팅"><header id="chatHeader">💬 실시간 동네 잡담 <button id="chatToggle" type="button">펼치기</button></header><div id="chatlog" aria-live="polite"><div class="sys">닉네임을 설정하고 입장해 주세요.</div></div><form id="chatForm"><input id="chatInput" autocomplete="off" maxlength="160" placeholder="메시지 입력"><button type="submit">전송</button></form></section>
+<section id="chatpanel" class="minimized" aria-label="실시간 채팅"><header id="chatHeader"><span class="chatTitle">💬 실시간 동네 잡담</span><button id="chatToggle" type="button" aria-label="채팅창 펼치기">펼치기</button></header><div id="chatlog" aria-live="polite"><div class="sys">닉네임을 설정하고 입장해 주세요.</div></div><form id="chatForm"><input id="chatInput" autocomplete="off" maxlength="160" placeholder="메시지 입력"><button type="submit">전송</button></form></section>
 <div id="entryScreen"><div class="entryBox"><div style="font-size:43px">📺☕</div><h1>골목 잉토방</h1><p>허름한 동네 토토방 3D 메타버스<br>TV를 보며 경기를 분석하고 옆 사람과 대화하세요.</p><input id="entryNick" maxlength="14" autocomplete="nickname" placeholder="닉네임 (2~14자)" aria-label="닉네임"><button id="entryJoin">동네 토토방 입장하기</button><div id="entryError" class="entry-error"></div><p>경기 예시 데이터가 표시됩니다. 실시간 경기와 실제 영상 중계는 현재 연동 전입니다.</p></div></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';

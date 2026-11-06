@@ -111,8 +111,8 @@ async function submitMatches(next,success){
  setBusy(true);
  try{
   const result=await api('POST',{matches:next});
-  matches=result.matches||next;resetForm();await read();say(success||'저장했습니다. 접속 중인 이용자의 TV에 반영됩니다.');
- }catch(err){say(err.message,true);}
+  matches=result.matches||next;resetForm();await read();say(success||'저장했습니다. 접속 중인 이용자의 TV에 반영됩니다.');return true;
+ }catch(err){say(err.message,true);return false;}
  finally{setBusy(false);}
 }
 function makeButton(label,fn,cls=''){
@@ -205,7 +205,7 @@ el('bulkAnalyze').onclick=()=>{
  else say(bulkItems.length+'개 경기를 인식했습니다. 아래에서 확인 후 한 번에 등록하세요.');
 };
 el('bulkClear').onclick=()=>{el('bulkInput').value='';bulkItems=[];bulkRender();};
-el('bulkSave').onclick=()=>{
+el('bulkSave').onclick=async()=>{
  if(busy)return;
  const selected=bulkItems.filter((_,i)=>el('bulkCheck'+i)?.checked);
  if(!selected.length){say('등록할 경기를 선택해 주세요.',true);return;}
@@ -221,8 +221,8 @@ el('bulkSave').onclick=()=>{
  }
  if(!added){say('이미 등록된 경기이거나 중복된 항목입니다.',true);return;}
  if(replace&&!confirm('기존 경기 모두 교체하고 '+added+'개를 등록하시겠습니까?'))return;
- submitMatches(next,added+'개 경기를 일괄 등록했습니다. 모든 이용자의 TV에 반영됩니다.');
- bulkItems=[];el('bulkPreview').replaceChildren();el('bulkSummary').textContent='';el('bulkSave').disabled=true;
+ const saved=await submitMatches(next,added+'개 경기를 일괄 등록했습니다. 모든 이용자의 TV에 반영됩니다.');
+ if(saved){bulkItems=[];el('bulkPreview').replaceChildren();el('bulkSummary').textContent='';el('bulkSave').disabled=true;}
 };
 
 el('loginForm').addEventListener('submit',async ev=>{

@@ -61,7 +61,7 @@ async function refreshFeed(force=false) {
   } catch(err) {
     feedLive=false;
     feedError=String(err.message||'조회 실패').slice(0,130);
-    if([403,429].includes(err.status))nextAllowedAttempt=Date.now()+60*60*1000;
+    if([403,429,430].includes(err.status))nextAllowedAttempt=Date.now()+60*60*1000;
     feedSource='에펨코리아 잉여력놀이터 · 조회 제한 또는 실패';
     console.warn('match headlines unavailable',feedError);
   }

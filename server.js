@@ -3,6 +3,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const { WebSocketServer, WebSocket } = require('ws');
+const { SOURCE:POINTPLAY_URL, fetchPointplay }=require('./pointplay');
 const PORT = Number(process.env.PORT || 3000);
 const MAX_USERS = 100;
 const clients = new Map();
@@ -12,6 +13,9 @@ let currentMatches = [];
 let feedUpdatedAt = null;
 let feedSource = '사진 기반 예시';
 let feedLive = false;
+let feedError = '';
+let feedLastAttempt=0;
+let nextAllowedAttempt=0;
 function safeText(x, max=120) {return String(x ?? '').replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,max);}
 function safeJson(x) {try {return JSON.parse(x);} catch {return null;}}
 function send(ws, obj) {if(ws.readyState===WebSocket.OPEN) try{ws.send(JSON.stringify(obj));}catch{}}
@@ -29,22 +33,38 @@ function normalizeMatch(m, i) {
     desc:safeText(m.desc||'실제 분석 자료가 없습니다.',240),
     url:/^https:\/\/(?:www\.)?fmkorea\.com\//i.test(u)?u:''};
 }
-async function refreshFeed() {
+async function refreshFeed(force=false) {
+  const now=Date.now();
+  if(now<nextAllowedAttempt || now-feedLastAttempt<(force?180000:450000))return;
+  feedLastAttempt=now;
   const url=process.env.EVENTS_FEED_URL;
-  if(!url || !/^https:\/\//i.test(url)){feedLive=false;return;}
   try {
-    const response=await fetch(url,{signal:AbortSignal.timeout(12000),headers:{Accept:'application/json'}});
-    if(!response.ok)throw new Error('feed HTTP '+response.status);
-    const raw=await response.json();
-    const list=Array.isArray(raw)?raw:raw.matches;
-    if(!Array.isArray(list))throw new Error('invalid feed format');
-    currentMatches=list.slice(0,45).map(normalizeMatch).filter(Boolean);
-    feedLive=true;
+    let list;
+    if(url && /^https:\/\//i.test(url)) {
+      const response=await fetch(url,{signal:AbortSignal.timeout(12000),headers:{Accept:'application/json'}});
+      if(!response.ok){const e=new Error('feed HTTP '+response.status);e.status=response.status;throw e;}
+      const raw=await response.json();
+      list=Array.isArray(raw)?raw:raw.matches;
+      if(!Array.isArray(list))throw Error('invalid feed format');
+      feedSource='승인된 외부 경기 피드';
+    } else {
+      list=await fetchPointplay();
+      feedSource='에펨코리아 잉여력놀이터 원문';
+    }
+    const out=list.slice(0,45).map(normalizeMatch).filter(Boolean);
+    if(!out.length)throw Error('받아온 경기 게시글이 없습니다');
+    currentMatches=out;
+    feedLive=true; feedError='';
     feedUpdatedAt=new Date().toISOString();
-    feedSource='연동된 외부 경기 데이터';
     broadcast({t:'feed_updated',updatedAt:feedUpdatedAt});
-    console.log('feed updated',currentMatches.length);
-  } catch(err) {feedLive=false;console.warn('feed failed',err.message);}
+    console.log('match headlines updated',out.length,feedSource);
+  } catch(err) {
+    feedLive=false;
+    feedError=String(err.message||'조회 실패').slice(0,130);
+    if([403,429].includes(err.status))nextAllowedAttempt=Date.now()+60*60*1000;
+    feedSource='에펨코리아 잉여력놀이터 · 조회 제한 또는 실패';
+    console.warn('match headlines unavailable',feedError);
+  }
 }
 const server=http.createServer((req,res)=>{
   const url=new URL(req.url,'http://localhost');
@@ -54,8 +74,9 @@ const server=http.createServer((req,res)=>{
     return;
   }
   if(url.pathname==='/api/events'){
+    if(url.searchParams.get('refresh')==='1')refreshFeed(true).catch(()=>{});
     res.writeHead(200,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});
-    res.end(JSON.stringify({matches:feedLive?currentMatches:[],live:feedLive,source:feedSource,updatedAt:feedUpdatedAt}));
+    res.end(JSON.stringify({matches:feedLive?currentMatches:[],live:feedLive,source:feedSource,sourceUrl:POINTPLAY_URL,updatedAt:feedUpdatedAt,error:feedError,refreshMinutes:10}));
     return;
   }
   if(url.pathname==='/api/admin/events' && req.method==='POST'){
@@ -137,6 +158,6 @@ wss.on('connection',ws=>{
 });
 setInterval(()=>{const players=listPlayers();if(players.length)broadcast({t:'state',players,users:players.length});},350).unref();
 setInterval(()=>{for(const ws of wss.clients){if(ws.isAlive===false){ws.terminate();continue;}ws.isAlive=false;ws.ping();}},30000).unref();
-setInterval(refreshFeed,60*60*1000).unref();
+setInterval(refreshFeed,10*60*1000).unref();
 refreshFeed();
 server.listen(PORT,'0.0.0.0',()=>console.log('Metaverse listening on '+PORT));

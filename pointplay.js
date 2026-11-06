@@ -71,4 +71,4 @@ async function fetchPointplay(){
   if(!matches.length)throw Error('게시판 제목을 인식하지 못했습니다');
   return matches;
 }
-module.exports={SOURCE,parsePointplay,fetchPointplay};
+module.exports={SOURCE,parsePointplay,fetchPointplay,extractTitle};

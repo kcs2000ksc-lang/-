@@ -263,4 +263,4 @@ wss.on('connection',ws=>{
 setInterval(()=>{const players=listPlayers();if(players.length)broadcast({t:'state',players,users:players.length});},350).unref();
 setInterval(()=>{for(const ws of wss.clients){if(ws.isAlive===false){ws.terminate();continue;}ws.isAlive=false;ws.ping();}},30000).unref();
 setInterval(refreshFeed,10*60*1000).unref();
-(async()=>{await initializeStorage();server.listen(PORT,'0.0.0.0',()=>console.log('Metaverse listening on '+PORT));refreshFeed().catch(e=>console.error('Feed refresh error',e));})().catch(err=>{console.error('Startup failure',err);process.exit(1)});
+(async()=>{await initializeStorage();if(process.env.FI_KEY){boardMode='auto';currentMatches=[];feedLive=false;feedUpdatedAt=null;feedSource='외부 수집 준비 중';}server.listen(PORT,'0.0.0.0',()=>console.log('Metaverse listening on '+PORT));refreshFeed().catch(e=>console.error('Feed refresh error',e));})().catch(err=>{console.error('Startup failure',err);process.exit(1)});

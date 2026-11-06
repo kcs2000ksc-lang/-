@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1e271f">
+<title>골목 잉토방 · 관리자 경기 등록</title>
+<style>
+:root{color-scheme:dark;--bg:#1e281f;--panel:#2c362b;--line:#55644e;--txt:#eee9d7;--muted:#b9bea8;--accent:#dbe69a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,'Apple SD Gothic Neo','Malgun Gothic',sans-serif}
+main{max-width:950px;margin:0 auto;padding:20px 15px 55px}h1{font-size:23px;margin:4px 0}h2{font-size:19px;margin:5px 0 15px}
+p{line-height:1.6;color:var(--muted)}a{color:var(--accent)}.small{font-size:12px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.card{padding:18px;margin-bottom:16px;border:1px solid var(--line);border-radius:13px;background:var(--panel)}
+label{font-size:13px;font-weight:750;color:#d7ddc9;display:block;margin-bottom:6px}
+input,select,textarea{width:100%;color:#fff;background:#18221a;border:1px solid #6a7866;border-radius:8px;padding:12px 11px;font:inherit;min-width:0}
+textarea{resize:vertical;min-height:75px}input:focus,textarea:focus,select:focus{outline:2px solid #9db76c}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.wide{grid-column:1/-1}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}button{border:1px solid #68785f;border-radius:8px;background:#414f3d;color:#fff;font-size:14px;font-weight:750;padding:10px 13px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#20291f}button.danger{color:#ffd8c8;border-color:#8a5846}
+button:disabled{opacity:.6;cursor:wait}
+.match{padding:14px;border:1px solid #586952;border-radius:9px;background:#222e23;margin:10px 0}
+.match strong{display:block;font-size:15px;margin:6px 0}.muted{color:var(--muted);font-size:12px}.match-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+#notice{padding:11px 13px;background:#253e2e;border:1px solid #678464;border-radius:8px;margin:10px 0 20px;line-height:1.55}
+#notice.error{background:#492c25;border-color:#a96c59}
+#authrow{display:flex;gap:10px;align-items:end}#authrow label{flex:1}#authrow button{height:46px}
+#editor[hidden],#login[hidden]{display:none!important}
+footer{font-size:12px;color:var(--muted);margin-top:30px}
+@media(max-width:550px){.grid{grid-template-columns:1fr}.top{align-items:start}#authrow{flex-wrap:wrap}#authrow label{width:100%;flex:auto}}
+</style></head><body>
+<main>
+<header class="top"><div><h1>📺 골목 잉토방 · 경기 관리</h1><p class="small">관리자가 경기를 입력하면 이용자들의 TV와 경기표에 반영됩니다.</p></div><a href="/" target="_blank" rel="noopener">3D 토토방 열기</a></header>
+<div id="notice" role="status" aria-live="polite">관리자 암호를 입력해 주세요.</div>
+<section class="card" id="login">
+<h2>🔒 관리자 로그인</h2>
+<form id="loginForm"><div id="authrow"><label>관리자 암호<input id="password" type="password" autocomplete="off" required placeholder="관리자 암호"></label><button class="primary" type="submit">로그인</button></div></form>
+<p class="small">일반 이용자는 등록할 수 없습니다. 암호는 주소나 게시글에 공유하지 마십시오.</p>
+</section>
+<div id="editor" hidden>
+<section class="card"><div class="top"><h2>경기 추가 · 수정</h2><button id="logout" type="button">로그아웃</button></div>
+<form id="matchForm" class="grid">
+<div><label for="sport">종목·리그 *</label><input id="sport" placeholder="예: KBL 남자농구" maxlength="90" required></div>
+<div><label for="market">배팅 종류</label><select id="market"><option>승패</option><option>핸디캡</option><option>언더·오버</option><option>기타</option></select></div>
+<div><label for="a">선택 A · 홈팀 *</label><input id="a" maxlength="80" placeholder="예: 안양 정관장 (-1.5)" required></div>
+<div><label for="b">선택 B · 원정팀 *</label><input id="b" maxlength="80" placeholder="예: 서울 SK" required></div>
+<div><label for="date">날짜 (월/일)</label><input id="date" maxlength="24" placeholder="예: 11/6"></div>
+<div><label for="time">경기 시간</label><input id="time" maxlength="30" placeholder="예: 19:00"></div>
+<div class="wide"><label for="url">잉토 게시글 원문 주소</label><input id="url" type="url" placeholder="https://m.fmkorea.com/123456789" inputmode="url"></div>
+<div class="wide"><label for="desc">경기 메모·마감 시간</label><textarea id="desc" maxlength="240" placeholder="예: 18:59 마감 · 연장 포함"></textarea></div>
+<div class="wide controls"><button class="primary" id="save" type="submit">＋ 경기 등록하기</button><button id="reset" type="button">입력 초기화</button></div>
+</form></section>
+<section class="card"><div class="top"><div><h2>📋 등록된 경기 <span id="count">0</span>개</h2><p class="small" id="updated"></p></div><div class="controls"><button id="export" type="button">JSON 백업</button><button id="reload" type="button">목록 새로고침</button><button id="clearAll" class="danger" type="button">전체 삭제</button></div></div>
+<div id="list" aria-live="polite"></div>
+<p class="small" id="storageNote"></p>
+</section></div>
+<footer>잉토 경기 정보는 관리자가 입력한 내용을 표시하며, 실제 경기 결과·실시간 영상 중계는 포함하지 않습니다.</footer>
+</main>
+<script>
+'use strict';
+const el=id=>document.getElementById(id);
+const fields=['sport','market','a','b','date','time','url','desc'];
+let token='',matches=[],editIndex=-1,busy=false;
+function say(msg,error=false){el('notice').textContent=msg;el('notice').classList.toggle('error',error);}
+function setBusy(v){busy=v;el('save').disabled=v;el('reload').disabled=v;}
+function clean(s){return String(s||'').trim();}
+function setLoggedIn(value){el('login').hidden=value;el('editor').hidden=!value;}
+function formData(){
+ const m={};for(const f of fields)m[f]=clean(el(f).value);
+ m.id=editIndex>=0?matches[editIndex].id:'manual-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
+ return m;
+}
+function resetForm(){el('matchForm').reset();editIndex=-1;el('save').textContent='＋ 경기 등록하기';}
+async function api(method='GET',body){
+ const res=await fetch('/api/admin/events',{method,headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined,cache:'no-store'});
+ let data;try{data=await res.json();}catch{data={message:'서버 응답 오류'};}
+ if(!res.ok)throw Error(data.message||'서버 오류: '+res.status);
+ return data;
+}
+async function read(){
+ const data=await api('GET');
+ matches=Array.isArray(data.matches)?data.matches:[];
+ el('updated').textContent=data.updatedAt?'마지막 변경: '+new Date(data.updatedAt).toLocaleString('ko-KR'):'등록된 경기 없음';
+ el('storageNote').textContent=data.persistent?'데이터베이스에 저장됩니다.':'현재 서버 메모리에 보관됩니다. 서버 재시작·재배포 시 초기화되므로 JSON 백업을 보관해 주세요.';
+ render();return data;
+}
+async function submitMatches(next,success){
+ if(busy)return;
+ setBusy(true);
+ try{
+  const result=await api('POST',{matches:next});
+  matches=result.matches||next;resetForm();await read();say(success||'저장했습니다. 접속 중인 이용자의 TV에 반영됩니다.');
+ }catch(err){say(err.message,true);}
+ finally{setBusy(false);}
+}
+function makeButton(label,fn,cls=''){
+ const b=document.createElement('button');b.type='button';b.textContent=label;if(cls)b.className=cls;b.addEventListener('click',fn);return b;
+}
+function render(){
+ el('count').textContent=String(matches.length);const list=el('list');list.replaceChildren();
+ if(!matches.length){const empty=document.createElement('p');empty.className='muted';empty.textContent='등록된 경기가 없습니다. 위에서 새 경기를 등록해 주세요.';list.appendChild(empty);return;}
+ matches.forEach((m,i)=>{
+  const item=document.createElement('article');item.className='match';
+  const meta=document.createElement('div');meta.className='muted';meta.textContent=[i+1,m.sport,m.date,m.time,m.market].filter(Boolean).join(' · ');
+  const title=document.createElement('strong');title.textContent=(m.a||'')+' VS '+(m.b||'');
+  item.append(meta,title);
+  if(m.desc){const d=document.createElement('div');d.className='muted';d.textContent=m.desc;item.appendChild(d);}
+  if(m.url){const link=document.createElement('a');link.href=m.url;link.textContent='잉토 원문 확인';link.target='_blank';link.rel='noopener noreferrer';item.appendChild(link);}
+  const buttons=document.createElement('div');buttons.className='match-actions';
+  buttons.append(
+   makeButton('수정',()=>{editIndex=i;for(const f of fields)el(f).value=m[f]||'';el('save').textContent='수정 저장하기';el('matchForm').scrollIntoView({behavior:'smooth',block:'start'});}),
+   makeButton('삭제',()=>{if(confirm('해당 경기를 삭제하시겠습니까?'))submitMatches(matches.filter((_,j)=>j!==i),'경기를 삭제했습니다.');},'danger'),
+   makeButton('↑',()=>{if(i<1)return;const a=matches.slice();[a[i-1],a[i]]=[a[i],a[i-1]];submitMatches(a,'순서를 변경했습니다.');}),
+   makeButton('↓',()=>{if(i>=matches.length-1)return;const a=matches.slice();[a[i+1],a[i]]=[a[i],a[i+1]];submitMatches(a,'순서를 변경했습니다.');})
+  );
+  item.appendChild(buttons);list.appendChild(item);
+ });
+}
+el('loginForm').addEventListener('submit',async ev=>{
+ ev.preventDefault();token=clean(el('password').value);
+ try{await read();setLoggedIn(true);say('관리자 로그인이 완료됐습니다.');el('password').value='';}
+ catch(err){token='';say('인증 실패: '+err.message,true);}
+});
+el('matchForm').addEventListener('submit',ev=>{
+ ev.preventDefault();if(busy)return;const m=formData();
+ if(!m.sport||!m.a||!m.b){say('종목과 두 팀 이름을 입력해 주세요.',true);return;}
+ if(m.url && !/^https:\/\/(?:m\.|www\.)?fmkorea\.com\/\d{6,}/i.test(m.url)){say('원문 주소는 에펨코리아 게시글 링크만 등록할 수 있습니다.',true);return;}
+ if(editIndex<0 && matches.length>=45){say('최대 45경기까지 등록할 수 있습니다.',true);return;}
+ const next=matches.slice();if(editIndex>=0)next[editIndex]=m;else next.unshift(m);
+ submitMatches(next,editIndex>=0?'경기 정보를 수정했습니다.':'새 경기를 등록했습니다. 접속 중인 모든 TV에 반영됩니다.');
+});
+el('reset').onclick=resetForm;
+el('reload').onclick=async()=>{try{await read();say('최신 경기 목록을 불러왔습니다.');}catch(e){say(e.message,true);}};
+el('clearAll').onclick=()=>{if(matches.length && confirm('모든 등록 경기를 삭제하시겠습니까?'))submitMatches([],'모든 경기를 삭제했습니다.');};
+el('logout').onclick=()=>{token='';matches=[];setLoggedIn(false);say('로그아웃했습니다.');};
+el('export').onclick=()=>{
+ const data=JSON.stringify({matches,exportedAt:new Date().toISOString()},null,2);
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download='골목잉토방-경기백업.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+ say('등록된 경기 목록을 JSON 파일로 저장했습니다.');
+};
+setLoggedIn(false);
+</script></body></html>

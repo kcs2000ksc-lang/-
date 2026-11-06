@@ -284,8 +284,8 @@ refreshFeed=async function(showFeedback=false){
   console.warn('pointplay:',err);
  }
 };
-$('feedBtn').textContent='🔄 경기표 새로고침';
-$('feedBtn').onclick=()=>refreshFeed(true);
+$('feedBtn').textContent='🔗 잉토 원문';
+$('feedBtn').onclick=()=>window.open(POINTPLAY_URL,'_blank','noopener,noreferrer');
 setInterval(()=>refreshFeed(false),60000);
 // augment the original frame loop without interfering with controls
 const _oldRender=renderer.render.bind(renderer);

@@ -6,6 +6,7 @@ const crypto = require('node:crypto');
 const { Pool } = require('pg');
 const { WebSocketServer, WebSocket } = require('ws');
 const { SOURCE:POINTPLAY_URL, fetchPointplay }=require('./pointplay');
+const { fetchFutureInfra }=require('./futureinfra');
 const PORT = Number(process.env.PORT || 3000);
 const MAX_USERS = 100;
 const clients = new Map();
@@ -103,7 +104,8 @@ function normalizeMatch(m, i) {
 async function refreshFeed(force=false) {
   if(boardMode==='manual')return;
   const now=Date.now();
-  if(now<nextAllowedAttempt || now-feedLastAttempt<(force?180000:450000))return;
+  const minInterval=process.env.FI_KEY?60*60*1000:(force?180000:450000);
+  if(now<nextAllowedAttempt || now-feedLastAttempt<minInterval)return;
   feedLastAttempt=now;
   const url=process.env.EVENTS_FEED_URL;
   try {
@@ -115,6 +117,9 @@ async function refreshFeed(force=false) {
       list=Array.isArray(raw)?raw:raw.matches;
       if(!Array.isArray(list))throw Error('invalid feed format');
       feedSource='승인된 외부 경기 피드';
+    } else if(process.env.FI_KEY) {
+      list=await fetchFutureInfra();
+      feedSource='제3자 게시글 수집 데이터 (비공식)';
     } else {
       list=await fetchPointplay();
       feedSource='에펨코리아 잉여력놀이터 원문';
@@ -144,7 +149,7 @@ const server=http.createServer((req,res)=>{
   if(url.pathname==='/api/events'){
     if(url.searchParams.get('refresh')==='1')refreshFeed(true).catch(()=>{});
     res.writeHead(200,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});
-    res.end(JSON.stringify({matches:feedLive?currentMatches:[],live:feedLive,manual:boardMode==='manual',source:feedSource,sourceUrl:POINTPLAY_URL,updatedAt:feedUpdatedAt,error:feedError,refreshMinutes:10}));
+    res.end(JSON.stringify({matches:feedLive?currentMatches:[],live:feedLive,manual:boardMode==='manual',source:feedSource,sourceUrl:POINTPLAY_URL,updatedAt:feedUpdatedAt,error:feedError,collectorConfigured:!!process.env.FI_KEY,refreshMinutes:process.env.FI_KEY?60:10}));
     return;
   }
   if(url.pathname==='/api/admin/events'){
@@ -237,4 +242,4 @@ wss.on('connection',ws=>{
 setInterval(()=>{const players=listPlayers();if(players.length)broadcast({t:'state',players,users:players.length});},350).unref();
 setInterval(()=>{for(const ws of wss.clients){if(ws.isAlive===false){ws.terminate();continue;}ws.isAlive=false;ws.ping();}},30000).unref();
 setInterval(refreshFeed,10*60*1000).unref();
-(async()=>{await initializeStorage();await refreshFeed();server.listen(PORT,'0.0.0.0',()=>console.log('Metaverse listening on '+PORT));})().catch(err=>{console.error('Startup failure',err);process.exit(1)});
+(async()=>{await initializeStorage();server.listen(PORT,'0.0.0.0',()=>console.log('Metaverse listening on '+PORT));refreshFeed().catch(e=>console.error('Feed refresh error',e));})().catch(err=>{console.error('Startup failure',err);process.exit(1)});

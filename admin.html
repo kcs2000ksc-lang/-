@@ -46,7 +46,7 @@ footer{font-size:12px;color:var(--muted);margin-top:30px}
 <div class="wide"><label for="desc">경기 메모·마감 시간</label><textarea id="desc" maxlength="240" placeholder="예: 18:59 마감 · 연장 포함"></textarea></div>
 <div class="wide controls"><button class="primary" id="save" type="submit">＋ 경기 등록하기</button><button id="reset" type="button">입력 초기화</button></div>
 </form></section>
-<section class="card"><div class="top"><div><h2>📋 등록된 경기 <span id="count">0</span>개</h2><p class="small" id="updated"></p></div><div class="controls"><button id="export" type="button">JSON 백업</button><button id="reload" type="button">목록 새로고침</button><button id="clearAll" class="danger" type="button">전체 삭제</button></div></div>
+<section class="card"><div class="top"><div><h2>📋 등록된 경기 <span id="count">0</span>개</h2><p class="small" id="updated"></p></div><div class="controls"><button id="export" type="button">JSON 백업</button><button id="import" type="button">JSON 복원</button><input id="importFile" type="file" accept=".json,application/json" style="display:none"><button id="reload" type="button">목록 새로고침</button><button id="clearAll" class="danger" type="button">전체 삭제</button></div></div>
 <div id="list" aria-live="polite"></div>
 <p class="small" id="storageNote"></p>
 </section></div>
@@ -129,6 +129,19 @@ el('reset').onclick=resetForm;
 el('reload').onclick=async()=>{try{await read();say('최신 경기 목록을 불러왔습니다.');}catch(e){say(e.message,true);}};
 el('clearAll').onclick=()=>{if(matches.length && confirm('모든 등록 경기를 삭제하시겠습니까?'))submitMatches([],'모든 경기를 삭제했습니다.');};
 el('logout').onclick=()=>{token='';matches=[];setLoggedIn(false);say('로그아웃했습니다.');};
+el('import').onclick=()=>el('importFile').click();
+el('importFile').addEventListener('change',async ev=>{
+  const file=ev.target.files?.[0];ev.target.value='';
+  if(!file)return;
+  if(file.size>120000){say('JSON 파일이 너무 큽니다.',true);return;}
+  try{
+    const parsed=JSON.parse(await file.text());
+    const arr=Array.isArray(parsed)?parsed:parsed.matches;
+    if(!Array.isArray(arr)||arr.length>45)throw Error('유효한 경기 목록 파일이 아닙니다.');
+    if(!confirm('백업에 들어 있는 '+arr.length+'경기로 현재 목록을 교체하시겠습니까?'))return;
+    submitMatches(arr,'백업 경기표를 복원했습니다.');
+  }catch(err){say('복원 실패: '+err.message,true);}
+});
 el('export').onclick=()=>{
  const data=JSON.stringify({matches,exportedAt:new Date().toISOString()},null,2);
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download='골목잉토방-경기백업.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);

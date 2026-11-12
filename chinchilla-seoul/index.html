@@ -48,8 +48,8 @@ const CRASH_OVERRIDES={"서울 신규주택 100% 공공임대 선언":["서울 �
 function crashOptions(category,title,target){
   if(CRASH_OVERRIDES[title])return CRASH_OVERRIDES[title];
   const place=title.replace(/ (정비사업 운명은\?|개발계획 재심의|임대주택 갈등|토지보상 논란|광역교통 대책)$/,'');
-  if(category.includes('정비사업 승인'))return [place+' 용적률 1,000% 공공주택 10만 호를 반값 분양으로 일괄 승인',place+' 기존 고가주택을 공공이 대량 매입해 시세 30% 공공임대로 전환'];
-  if(category.includes('재개발 승인·취소'))return [place+' 민간 재개발 승인 전면 취소 후 공공임대 100%로 사업 재편',place+' 토지 강제수용 후 초고밀 공공분양 20만 호를 반값에 공급'];
+  if(category.includes('정비사업 승인'))return [place+' 재건축 로열동에 임대 세대를 집중 배치하고 단지 인근 대규모 반값 공공분양을 동시에 강행',place+' 기존 고가아파트를 공공이 대량 강제 매입하고 인근에 생활폐기물 집하장·변전소·버스차고지를 집중 배치'];
+  if(category.includes('재개발 승인·취소'))return [place+' 주요 재개발 단지의 한강뷰·역세권 로열동을 공공임대주택으로 우선 배정하고 대규모 공공분양 동시 시행',place+' 민간 재개발 승인 전면 취소 후 사업부지 강제 매입·초저가 공공분양 20만 호 일괄 공급'];
   if(category.includes('공공임대 공급'))return [place+' 기존 민간분양 계획 전부 취소하고 공공임대 100% 특별지정',place+' 한강뷰 포함 인기 입지를 매입해 시세 20% 장기임대 15만 호 공급'];
   if(category.includes('토지수용·보상'))return [place+' 토지를 시세 20%에 강제수용해 반값 공공분양 20만 호 동시 공급',place+' 재산권 제한 긴급명령으로 기존 주택까지 공공이 매입, 시세 30%로 공급'];
   if(category.includes('광역교통·개발'))return [place+' GTX역세권 공공주택 30만 호를 반값으로 동시 공급',place+' 전 지역 용적률 1,000% 상향과 공공임대 100% 초고밀 공급'];
@@ -119,13 +119,42 @@ const policies=[
 ['🧾 조세','매매세금 전격 변경','투기수요와 실거주 이동 수요 사이에서 최적 정책을 선택하십시오.',['실거주 1주택 이전세 경감과 투기취득 억제 병행','취득세 제도 현행 유지','다주택 단기거래 양도세 전면 면제','분양권 전매차익 세금 전면 면제'],'서울 전체']
 ];
 policies.forEach(p=>packs.push(pack(p[0],p[1],p[2],p[3],p[4])));
-const citizen={crash:[['😱','무주택 청년','"폭락이라니 기회일까요? 경제가 같이 무너질까 무섭습니다."'],['🏦','은행 직원','"담보가치가 급락해 금융시장에 비상이 걸렸습니다!"'],['🏠','기존 주택 소유자','"일주일 새 수년 치 자산가치가 사라졌습니다."'],['👷','건설 근로자','"신규 분양이 멈춰 일자리가 걱정됩니다."'],['🧑‍💼','부동산 중개사','"급매가 쏟아지는데 거래는 얼어붙었습니다."'],['👩‍👦','신혼부부','"집은 싸졌지만 대출이 나올지 모르겠네요."']],boom:[['🧑‍🎓','무주택 청년','"1주일 새 집값이 또 올랐어요. 제 월급은 왜 제자리인가요?"'],['👩‍👧','신혼부부','"계약금을 모았더니 목표 집값이 저 멀리 가버렸어요."'],['🧓','아파트 소유주','"우리 단지 신고가! 그런데 다음 집으로 갈 수도 없겠네요."'],['🧑‍💼','중개사','"매물은 귀한데 호가는 매일 바뀝니다!"'],['👷','건설 현장 노동자','"짓는 건 우리인데 살 집은 점점 없어집니다."'],['👨‍💻','직장인','"평행우주인데 집값만 현실보다 빠르네요."'],['👩','세입자','"전세 만기 전에 이삿짐부터 싸야 하나요?"'],['🧑‍🌾','토지 소유주','"개발계획이 바뀔 때마다 우리 동네는 전쟁터예요."']],down:[['🧑‍🎓','무주택 청년','"드디어 희망이 조금 보입니다. 오래 지속됐으면!"'],['👨‍👩‍👧','실수요 가족','"가격은 내렸지만 대출과 일자리도 살펴야 해요."'],['🏢','기존 집주인','"우리 집 자산 가치가 떨어지니 마음이 복잡합니다."'],['🐵','여론 담당 참모','"각하, 무주택 유권자들이 환호하고 있습니다!"'],['👵','재개발 주민','"집값보다 이주대책과 보상금을 제대로 챙겨주세요."']],hold:[['👩','청약 대기자','"가격이 멈췄다니 숨은 돌리겠네요."'],['🧑‍💼','중개사','"이번 주는 거래도 가격도 잠잠합니다."'],['👨‍👩‍👦','신혼부부','"그냥 멈추는 것도 좋지만 더 싸질 수 있을까요?"'],['👷','현장 관계자','"예측하기 어려워 신규 사업 결정을 미룹니다."']]};
+// Additional satirical cabinet meetings about prestigious locations and delayed redevelopment.
+// All projects and decisions here are fictional; location names only indicate the setting.
+const specialPolicies=[
+ ['🏢 재건축 로열동','강남구 압구정 재건축 임대 로열동 배치','원숭이 참모들이 재건축 단지의 한강뷰 로열동을 누구에게 배정할지 보고합니다.',[
+ '재건축 분양용 주택 3만 호를 중저가 공공분양으로 즉시 추가 공급',
+ '재건축 아파트 남향·한강뷰·역세권 로열동 및 로열층을 공공임대 세대로 우선 배정',
+ '강남 고가 재건축 아파트 20만 호 강제 매입 후 시세 40%에 일괄 매각',
+ '압구정·잠실 고가 재건축 인가를 전면 취소하고 반값 공공분양 초고밀 지구로 일괄 전환'
+ ],'강남구'],
+ ['🏞️ 핵심입지 임대','용산구 한강변 최상급 입지 임대아파트 지구','입지 좋은 한강변·역세권 부지를 공공임대 단지에 우선 배정하라는 보고입니다.',[
+ '용산·마포 핵심 역세권 중저가 공공분양 3만 호 즉시 공급',
+ '한강 조망이 뛰어난 핵심 부지를 전부 100% 공공임대 아파트 단지로 지정',
+ '한강변 고가아파트 20만 호를 공공기관이 강제 매입하고 시세 절반으로 분양',
+ '서울 핵심 인기 입지 전역에 가격상한 50%와 강제 매각 명령 일괄 시행'
+ ],'용산구'],
+ ['🚫 부의 대물림 방지','강남구 은마아파트 재건축 승인 무기한 보류','고가 재건축으로 부의 대물림이 이어진다는 참모들의 논쟁이 이어집니다.',[
+ '강남권 용적률 상향으로 중저가 일반분양 3만 호 추가 공급',
+ '부의 대물림 우려가 있는 고가 재건축 단지의 인허가를 임기 끝까지 보류',
+ '강남권 고가 재건축 지구 사업을 일제 취소하고 강제 공공매입 후 초저가 분양',
+ '강남·서초·송파 재건축 예정지에 시세 절반 강제 매각·공공분양 명령 동시 시행'
+ ],'강남구'],
+ ['🏭 기피시설 배치','송파구 잠실 재건축 주변 기피시설 지정','재건축을 계속 막고 고가 아파트 주변의 기피시설 입지를 조정하자는 참모의 보고입니다.',[
+ '잠실 고가 아파트 주변에 생활폐기물 집하장·변전소·버스차고지 집중 배치',
+ '부의 대물림 우려 아파트 재개발을 임기 끝까지 막고 기피시설을 주변에 우선 배치',
+ '잠실·여의도 재건축 전면 불허와 대규모 강제 매각을 통해 반값 공공분양 단지 지정',
+ '서울 고가 아파트 지역 재건축 승인 일괄 취소, 인근 기피시설 집중 배치 및 강제 매각'
+ ],'송파구']
+];
+specialPolicies.forEach(p=>packs.push(pack(p[0],p[1],p[2],p[3],p[4])));
+const citizen={crash:[['🥳','무주택 청년','"드디어 서울 아파트 가격이 폭락했네요! 대통령 지지합니다!"'],['🙌','신혼부부','"집 살 희망이 생겼어요. 대통령님 계속 밀어붙여 주세요!"'],['😢','기존 집주인','"우리 아파트 시세는 떨어졌지만 정부 지지율은 올라가네요."'],['🏘️','청약 대기자','"이제 우리도 서울에 집 한 채 마련할 수 있겠습니다!"'],['🐵','여론 담당 참모','"각하! 집값 폭락 소식에 지지율이 급상승하고 있습니다!"'],['👨‍👩‍👧','무주택 가족','"처음으로 서울 집값이 감당 가능한 수준으로 내려왔어요."']],boom:[['🧑‍🎓','무주택 청년','"1주일 새 집값이 또 올랐어요. 제 월급은 왜 제자리인가요?"'],['👩‍👧','신혼부부','"계약금을 모았더니 목표 집값이 저 멀리 가버렸어요."'],['🧓','아파트 소유주','"우리 단지 신고가! 그런데 다음 집으로 갈 수도 없겠네요."'],['🧑‍💼','중개사','"매물은 귀한데 호가는 매일 바뀝니다!"'],['👷','건설 현장 노동자','"짓는 건 우리인데 살 집은 점점 없어집니다."'],['👨‍💻','직장인','"평행우주인데 집값만 현실보다 빠르네요."'],['👩','세입자','"전세 만기 전에 이삿짐부터 싸야 하나요?"'],['🧑‍🌾','토지 소유주','"개발계획이 바뀔 때마다 우리 동네는 전쟁터예요."']],down:[['🧑‍🎓','무주택 청년','"드디어 희망이 조금 보입니다. 오래 지속됐으면!"'],['👨‍👩‍👧','실수요 가족','"가격은 내렸지만 대출과 일자리도 살펴야 해요."'],['🏢','기존 집주인','"우리 집 자산 가치가 떨어지니 마음이 복잡합니다."'],['🐵','여론 담당 참모','"각하, 무주택 유권자들이 환호하고 있습니다!"'],['👵','재개발 주민','"집값보다 이주대책과 보상금을 제대로 챙겨주세요."']],hold:[['👩','청약 대기자','"가격이 멈췄다니 숨은 돌리겠네요."'],['🧑‍💼','중개사','"이번 주는 거래도 가격도 잠잠합니다."'],['👨‍👩‍👦','신혼부부','"그냥 멈추는 것도 좋지만 더 싸질 수 있을까요?"'],['👷','현장 관계자','"예측하기 어려워 신규 사업 결정을 미룹니다."']]};
 const seed=(n)=>{let t=n+0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296};
 function rnd(n,k){return seed(n*971+k*97+43)}
 function shuffle(a,n){const out=a.slice();for(let i=out.length-1;i>0;i--){let j=Math.floor(rnd(n,i)* (i+1));[out[i],out[j]]=[out[j],out[i]]}return out}
 function pickPolicy(n){const deck=shuffle(packs,50+Math.floor(n/packs.length));const p=deck[n%packs.length];return {...p,opts:shuffle(p.opts,7000+n)};}
-function fresh(){return {week:0,approval:50,price:SEOUL_BASE,areaChanges:{},history:[],points:[SEOUL_BASE],policy:pickPolicy(0),ruleVersion:3,result:null,end:null};}
-let st;try{st=JSON.parse(localStorage.getItem(STORAGE));if(!st||!Number.isFinite(st.week)||!st.policy||!Array.isArray(st.points))throw 0;if(!st.result&&st.ruleVersion!==3)st.policy=pickPolicy(st.week);st.ruleVersion=3}catch(e){st=fresh()}
+function fresh(){return {week:0,approval:50,price:SEOUL_BASE,areaChanges:{},history:[],points:[SEOUL_BASE],policy:pickPolicy(0),ruleVersion:4,result:null,end:null};}
+let st;try{st=JSON.parse(localStorage.getItem(STORAGE));if(!st||!Number.isFinite(st.week)||!st.policy||!Array.isArray(st.points))throw 0;if(!st.result&&st.ruleVersion!==4)st.policy=pickPolicy(st.week);st.ruleVersion=4}catch(e){st=fresh()}
 function persist(){try{localStorage.setItem(STORAGE,JSON.stringify(st))}catch(e){}}
 let region='all',search='';
 const money=(v,exact=false)=>{let mil=Math.round(v*10000);const uk=Math.floor(mil/10000),rest=mil%10000;return uk+'억'+(rest?' '+rest.toLocaleString('ko-KR')+'만원':' 원')};
@@ -135,8 +164,9 @@ function num(x){return Number.isFinite(x)?x:0}
 function changeFor(market,decision){const global=(decision.rate);const key=st.policy.target||'';if(key==='서울 전체')return market.region==='seoul'?global*.78:global*.43;if(key==='경기 전체')return market.region==='metro'?global*1.1:global*.69;const matched=market.name===key||market.name.includes(key)||key.includes(market.name);if(matched)return global*1.55;const isMetro=key.startsWith('경기')||key.startsWith('인천');return (market.region===(isMetro?'metro':'seoul'))?global*.68:global*.39;}
 function decide(index){if(st.end||st.result)return;const opt=st.policy.opts[index];if(!opt)return;const kind=opt.kind;let rate=kind==='crash'?-(opt.severity==='extreme'?10+rnd(st.week,8)*5:4.5+rnd(st.week,8)*4.5):kind==='down'?-(.85+rnd(st.week,5)*1.3):0;
 // Coercive undercompensation raises public anger, irrespective of the market direction.
-let aDelta=kind==='down'?Math.round(6+rnd(st.week,11)*6):kind==='crash'?-Math.round(7+rnd(st.week,13)*10):Math.round(rnd(st.week,14)*3)-1;
-if(opt.toxic)aDelta-=Math.round(5+rnd(st.week,17)*7);
+// Presidential approval tracks the direction of apartment prices in this fictional game.
+// Falling prices lift approval; a genuine price boom alone reduces approval.
+let aDelta=rate<0?Math.round((rate<=-3?8:4)+rnd(st.week,13)*(rate<=-3?7:5)):rate>0?-Math.round(7+rnd(st.week,13)*10):0;
 const old=st.price;const next=Number((old*(1+rate/100)).toFixed(5));st.price=next;st.approval=Math.max(0,Math.min(100,st.approval+aDelta));st.week++;
 markets.forEach(m=>{st.areaChanges[m.name]=num(st.areaChanges[m.name])+changeFor(m,{rate})});st.points.push(st.price);
 const rs={kind,rate,aDelta,index,opt:opt.text,headline:kind==='crash'?'💥 서울 집값 대폭락! 급매물 속출·서민과 집주인 반응 엇갈려':kind==='down'?'📉 서울 집값 하락! 대통령실 “공급·시장 조정 성과”':'⏸️ 서울 집값 제자리… 시민들 관망',detail:(st.week)+'주차 '+opt.text+' 시행. '+(opt.reason==='policyLag'?'공공임대 공급 또는 다주택자 보유세 정책은 매매시장에 즉각적인 공급 충격을 주지 않아 이번 주 시세가 유지됐습니다. ':'')+'서울 평균 '+money(old)+' → '+money(st.price)+'. 지지율 '+(aDelta>=0?'+':'')+aDelta+'%p.'};
@@ -148,7 +178,7 @@ function endResult(){const config={win:['🏆','지지율 100% 달성!','위대�
 function chart(){let vals=st.points, min=Math.min(...vals,SEOUL_BASE*.9),max=Math.max(...vals,SEOUL_BASE*1.1), margin=(max-min)*.14;min-=margin;max+=margin;const x=i=>10+(i/Math.max(1,vals.length-1))*370,y=v=>132-((v-min)/(max-min))*115;const coords=vals.map((v,i)=>`${x(i)},${y(v)}`).join(' ');const area='M '+vals.map((v,i)=>`${x(i)} ${y(v)}`).join(' L ')+' L 380 132 L 10 132 Z';let grid='';for(let i=0;i<4;i++){let py=16+i*38;grid+=`<line x1="10" y1="${py}" x2="380" y2="${py}" stroke="#e3eae3" stroke-dasharray="4 4"/><text x="12" y="${py-3}" fill="#8da09d" font-size="9">${(max-(max-min)*i/3).toFixed(1)}억</text>`;}const latest=vals[vals.length-1];$('lineChart').innerHTML=`<defs><linearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#b0e4d1" stop-opacity=".75"/><stop offset="1" stop-color="#c1e8d5" stop-opacity=".05"/></linearGradient></defs>${grid}<path d="${area}" fill="url(#areaFill)"/><polyline points="${coords}" fill="none" stroke="#248d76" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${x(vals.length-1)}" cy="${y(latest)}" r="5.2" fill="#fff" stroke="#248d76" stroke-width="3"/>`;$('chartLatest').textContent='현재 '+latest.toFixed(3)+'억 원';}
 function renderMarkets(){const list=markets.filter(m=>(region==='all'||region===m.region)&&m.name.includes(search));$('marketRows').innerHTML=list.map(m=>{const val=currentPrice(m),delta=(val/m.base-1)*100;return `<tr><td>${m.name}</td><td>${money(m.base)}</td><td><b>${money(val)}</b></td><td class="${delta>0.001?'pos':delta<-.001?'neg':'neutral'}">${pct(delta)}</td></tr>`}).join('')||'<tr><td colspan="4">검색 결과가 없습니다.</td></tr>'}
 function reactionSample(kind){const pool=citizen[kind],s=st.week||0;const ids=shuffle(Array.from({length:pool.length},(_,i)=>i),s*11+85).slice(0,3);return ids.map(i=>{let p=pool[i];return `<div class="reactionItem"><div class="face">${p[0]}</div><div><b>${p[1]}</b>${p[2]}</div></div>`}).join('')}
-function render(){let upcoming=st.week+1;$('weekStat').textContent=st.week+' / '+MAX_WEEKS+'주';let d=new Date(2025,11,31+st.week*7);$('dateStat').textContent=d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';$('priceStat').textContent=money(st.price);const overall=(st.price/SEOUL_BASE-1)*100;$('changeStat').innerHTML=`시작 대비 <b class="${overall>0?'pos':overall<0?'neg':'neutral'}">${pct(overall)}</b>`;$('approvalStat').textContent=st.approval+'%';$('approvalMeter').style.width=st.approval+'%';$('crisisStat').textContent=(st.price/CEILING*100).toFixed(1)+'%';$('crisisMeter').style.width=Math.min(100,st.price/CEILING*100)+'%';$('weekBadge').textContent='제'+Math.min(upcoming,MAX_WEEKS)+'주차';const p=st.policy;$('policyCategory').textContent=p.category;$('policyTitle').textContent=p.title;$('policyDesc').textContent=p.desc;$('monkeyLine').textContent=p.adviser;if(st.result)$('monkeyLine').textContent=st.result.kind==='crash'?'각하! 집값이 폭락했습니다! 금융시장과 부동산 시장이 발칵 뒤집혔습니다!':st.result.kind==='down'?'각하! 집값이 내려갔습니다! 여론이 요동칩니다!':'각하, 이번 주는 집값이 제자리입니다!';
+function render(){let upcoming=st.week+1;$('weekStat').textContent=st.week+' / '+MAX_WEEKS+'주';let d=new Date(2025,11,31+st.week*7);$('dateStat').textContent=d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일';$('priceStat').textContent=money(st.price);const overall=(st.price/SEOUL_BASE-1)*100;$('changeStat').innerHTML=`시작 대비 <b class="${overall>0?'pos':overall<0?'neg':'neutral'}">${pct(overall)}</b>`;$('approvalStat').textContent=st.approval+'%';$('approvalMeter').style.width=st.approval+'%';$('crisisStat').textContent=(st.price/CEILING*100).toFixed(1)+'%';$('crisisMeter').style.width=Math.min(100,st.price/CEILING*100)+'%';$('weekBadge').textContent='제'+Math.min(upcoming,MAX_WEEKS)+'주차';const p=st.policy;$('policyCategory').textContent=p.category;$('policyTitle').textContent=p.title;$('policyDesc').textContent=p.desc;$('monkeyLine').textContent=p.adviser;if(st.result)$('monkeyLine').textContent=st.result.rate>0?'각하! 집값이 폭등했습니다! 지지율이 급락하고 있습니다!':st.result.kind==='crash'?'각하! 집값이 폭락했습니다! 무주택 시민들이 환호하며 지지율이 상승합니다!':st.result.kind==='down'?'각하! 집값이 하락했습니다! 서민들의 지지율이 상승합니다!':'각하! 이번 주 집값은 제자리이며 지지율도 유지됩니다!';
 $('choices').innerHTML=p.opts.map((o,i)=>{let cls=st.result?(st.result.index===i?`chosen result${o.kind[0].toUpperCase()+o.kind.slice(1)}`:''):'';let outcome=st.result&&st.result.index===i?(o.kind==='crash'?' · 💥 폭락':o.kind==='down'?' · 📉 하락':' · ⏸ 유지'):'';return `<button type="button" data-idx="${i}" class="choice ${cls}" ${st.result||st.end?'disabled':''}><span class="number">${i+1}</span><span>${o.text}${outcome}</span><span class="arrow">${st.result&&st.result.index===i?'✔':'›'}</span></button>`}).join('');
 $('choices').querySelectorAll('button').forEach(btn=>btn.addEventListener('click',()=>decide(Number(btn.dataset.idx))));
 const rs=st.result;$('resultSlot').innerHTML=rs?`<div class="result ${rs.kind==='crash'?'crash':rs.kind==='hold'?'hold':''}"><div class="resultTitle">${rs.kind==='crash'?'💥 집값 폭락!':rs.kind==='down'?'📉 집값 하락!':'⏸️ 집값 유지!'}</div><div class="resultCopy">서울 평균매매가: <b>${money(st.price)}</b> (${pct(rs.rate,2)})<br>대통령 지지율: <b>${st.approval}%</b> (${rs.aDelta>0?'+':''}${rs.aDelta}%p)</div><button class="next" id="nextBtn" ${st.end?'disabled':''}>${st.end?'게임 종료':'다음 주 정책회의 →'}</button></div>`:'';

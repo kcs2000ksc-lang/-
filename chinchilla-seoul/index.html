@@ -59,7 +59,7 @@ function crashOptions(category,title,target){
 // mechanically lower the apartment transaction price within one game week.
 // Allocate one hold choice to these measures; keep two distinct extraordinary crash
 // actions and one moderate reduction in every four-choice scenario.
-const TAX_RENT_POLICY=/(?:공공임대|장기임대|장기 공공임대|다주택자?\s*보유세|다주택.*중과|투기성 보유세)/;
+const TAX_RENT_POLICY=/(?:공공임대|장기임대|장기 공공임대|다주택.*(?:보유세|양도세|양도차익|세금|중과)|투기성 보유세)/;
 function balanceChoices(category,title,raw,target){
   const opts=raw.map((x,i)=>i>=2?
     {text:crashOptions(category,title,target)[i-2],kind:'crash',severity:i===3?'extreme':'high',toxic:(typeof x==='object'&&!!x.toxic)||category.includes('토지수용')}
@@ -67,7 +67,7 @@ function balanceChoices(category,title,raw,target){
   // Even a 100% rental construction announcement increases rentals, not this week's
   // for-sale apartment inventory. Likewise holding taxes can lock up listings.
   if(TAX_RENT_POLICY.test(opts[0].text)){
-    const unchangedText=opts[0].text;
+    const unchangedText=title==='다주택자 세금 긴급 개편'?'다주택자 보유세 중과만 시행하고 신규 매물 공급은 그대로 유지':opts[0].text;
     opts[0]={...opts[0],text:(target||'수도권')+' 중저가 공공분양 3만 호 즉시 공급으로 매매 물량 확대',kind:'down'};
     opts[1]={...opts[1],text:unchangedText,kind:'hold',reason:'policyLag'};
   }

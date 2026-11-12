@@ -365,8 +365,10 @@ function policyVariant(p,n){
  const cycle=Math.floor(n/packs.length);
  if(p.custom)return {...p,opts:shuffle(p.opts,7000+n)};
  const variants=POLICY_THEMES[policyTheme(p)];
- const lines=variants[(cycle+n+p.title.length)%variants.length];
- const focus=(p.target||'서울').replace(' 전체','') ;
+ const lines=variants[(cycle+(n%5)+p.title.length)%variants.length];
+ const focus=(p.target||'서울').replace(' 전체','');
+ const isLocal=!['서울 전체','경기 전체','인천 전체'].includes(p.target);
+ const localize=(raw)=>{let t=raw;if(isLocal){t=t.replace(/2만 가구/g,'2,000가구').replace(/3만 가구/g,'3,000가구').replace(/4만 가구/g,'4,000가구');if(!/마포|용산|성동|영등포|동작|광진|강남|송파|강동|서초/.test(focus))t=t.replace(/한강뷰|한강변/g,'우수 입지');t=t.replace(/강남 핵심지/g,focus+' 핵심지');}return t;};
  // A different cabinet proposal set is produced when the same locality or
  // issue returns in a later 200-week turn; original categories and sites remain.
  const slot={down:0,hold:1,boom:2};
@@ -374,7 +376,7 @@ function policyVariant(p,n){
  const opts=p.opts.map(o=>{
    let i=o.kind==='boom' ? 2+(boomSeen++) : slot[o.kind];
    if(i===undefined)throw Error('Invalid policy category');
-   return {...o,text:focus+' — '+lines[i],reason:o.kind==='hold'?'policyLag':undefined};
+   return {...o,text:focus+' — '+localize(lines[i]),reason:o.kind==='hold'?'policyLag':undefined};
  });
  const mixed=shuffle(opts,7000+n);
  const counts=mixed.reduce((a,o)=>(a[o.kind]=(a[o.kind]||0)+1,a),{});

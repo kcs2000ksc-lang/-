@@ -55,7 +55,36 @@ function crashOptions(category,title,target){
   if(category.includes('광역교통·개발'))return [place+' GTX역세권 공공주택 30만 호를 반값으로 동시 공급',place+' 전 지역 용적률 1,000% 상향과 공공임대 100% 초고밀 공급'];
   return [(target||'서울')+' 공공주택 20만 호를 시세 절반으로 긴급 공급',(target||'수도권')+' 민간 정비사업을 전면 취소하고 100% 공공임대로 전환'];
 }
-const pack=(category,title,desc,opts,target,adviser)=>({category,title,desc,opts:opts.map((x,i)=>i>=2?{text:crashOptions(category,title,target)[i-2],kind:'crash',severity:i===3?'extreme':'high',toxic:(typeof x==='object'&&!!x.toxic)||category.includes('토지수용')}:typeof x==='string'?{text:x,kind:i===0?'down':'hold'}:{...x,kind:i===0?'down':'hold'}),target:target||'',adviser:adviser||'각하! 이 정책으로 서울과 수도권의 희비가 엇갈립니다. 신중히 결정해 주십시오!'});
+// A public-rental announcement or a multi-home holding-tax increase alone does NOT
+// mechanically lower the apartment transaction price within one game week.
+// Allocate one hold choice to these measures; keep two distinct extraordinary crash
+// actions and one moderate reduction in every four-choice scenario.
+const TAX_RENT_POLICY=/(?:공공임대|장기임대|장기 공공임대|다주택자?\s*보유세|다주택.*중과|투기성 보유세)/;
+function balanceChoices(category,title,raw,target){
+  const opts=raw.map((x,i)=>i>=2?
+    {text:crashOptions(category,title,target)[i-2],kind:'crash',severity:i===3?'extreme':'high',toxic:(typeof x==='object'&&!!x.toxic)||category.includes('토지수용')}
+    :typeof x==='string'?{text:x,kind:i===0?'down':'hold'}:{...x,kind:i===0?'down':'hold'});
+  // Even a 100% rental construction announcement increases rentals, not this week's
+  // for-sale apartment inventory. Likewise holding taxes can lock up listings.
+  if(TAX_RENT_POLICY.test(opts[0].text)){
+    const unchangedText=opts[0].text;
+    opts[0]={...opts[0],text:(target||'수도권')+' 중저가 공공분양 3만 호 즉시 공급으로 매매 물량 확대',kind:'down'};
+    opts[1]={...opts[1],text:unchangedText,kind:'hold',reason:'policyLag'};
+  }
+  for(let i=2;i<4;i++){
+    // The original generation incorrectly treated rental supply and higher taxes
+    // as an instant crash. Instead give the large-drop action a truly large forced
+    // sale/price-cap mechanism in this satirical, fictional simulation.
+    if(TAX_RENT_POLICY.test(opts[i].text)){
+      opts[i]={...opts[i],text:i===2?
+        (target||'서울')+' 기존 고가 아파트 강제 매각 20만 호, 최저가 매도 명령':
+        (target||'수도권')+' 기존 아파트 매매 상한을 시세의 절반으로 일괄 강제 지정',
+        reason:'forcedSale'};
+    }
+  }
+  return opts;
+}
+const pack=(category,title,desc,opts,target,adviser)=>({category,title,desc,opts:balanceChoices(category,title,opts,target),target:target||'',adviser:adviser||'각하! 이 정책으로 서울과 수도권의 희비가 엇갈립니다. 신중히 결정해 주십시오!'});
 const packs=[];
 // Real geographic names, but every proposal and all approvals/cancellations are fictional.
 locales.forEach(([place,target],n)=>{
@@ -95,8 +124,8 @@ const seed=(n)=>{let t=n+0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t
 function rnd(n,k){return seed(n*971+k*97+43)}
 function shuffle(a,n){const out=a.slice();for(let i=out.length-1;i>0;i--){let j=Math.floor(rnd(n,i)* (i+1));[out[i],out[j]]=[out[j],out[i]]}return out}
 function pickPolicy(n){const deck=shuffle(packs,50+Math.floor(n/packs.length));const p=deck[n%packs.length];return {...p,opts:shuffle(p.opts,7000+n)};}
-function fresh(){return {week:0,approval:50,price:SEOUL_BASE,areaChanges:{},history:[],points:[SEOUL_BASE],policy:pickPolicy(0),result:null,end:null};}
-let st;try{st=JSON.parse(localStorage.getItem(STORAGE));if(!st||!Number.isFinite(st.week)||!st.policy||!Array.isArray(st.points))throw 0;if(!st.result&&st.policy.opts.some(o=>o.kind==='boom'))st.policy=pickPolicy(st.week)}catch(e){st=fresh()}
+function fresh(){return {week:0,approval:50,price:SEOUL_BASE,areaChanges:{},history:[],points:[SEOUL_BASE],policy:pickPolicy(0),ruleVersion:3,result:null,end:null};}
+let st;try{st=JSON.parse(localStorage.getItem(STORAGE));if(!st||!Number.isFinite(st.week)||!st.policy||!Array.isArray(st.points))throw 0;if(!st.result&&st.ruleVersion!==3)st.policy=pickPolicy(st.week);st.ruleVersion=3}catch(e){st=fresh()}
 function persist(){try{localStorage.setItem(STORAGE,JSON.stringify(st))}catch(e){}}
 let region='all',search='';
 const money=(v,exact=false)=>{let mil=Math.round(v*10000);const uk=Math.floor(mil/10000),rest=mil%10000;return uk+'억'+(rest?' '+rest.toLocaleString('ko-KR')+'만원':' 원')};
@@ -110,7 +139,7 @@ let aDelta=kind==='down'?Math.round(6+rnd(st.week,11)*6):kind==='crash'?-Math.ro
 if(opt.toxic)aDelta-=Math.round(5+rnd(st.week,17)*7);
 const old=st.price;const next=Number((old*(1+rate/100)).toFixed(5));st.price=next;st.approval=Math.max(0,Math.min(100,st.approval+aDelta));st.week++;
 markets.forEach(m=>{st.areaChanges[m.name]=num(st.areaChanges[m.name])+changeFor(m,{rate})});st.points.push(st.price);
-const rs={kind,rate,aDelta,index,opt:opt.text,headline:kind==='crash'?'💥 서울 집값 대폭락! 급매물 속출·서민과 집주인 반응 엇갈려':kind==='down'?'📉 서울 집값 하락! 대통령실 “공급·시장 조정 성과”':'⏸️ 서울 집값 제자리… 시민들 관망',detail:(st.week)+'주차 '+opt.text+' 시행. 서울 평균 '+money(old)+' → '+money(st.price)+'. 지지율 '+(aDelta>=0?'+':'')+aDelta+'%p.'};
+const rs={kind,rate,aDelta,index,opt:opt.text,headline:kind==='crash'?'💥 서울 집값 대폭락! 급매물 속출·서민과 집주인 반응 엇갈려':kind==='down'?'📉 서울 집값 하락! 대통령실 “공급·시장 조정 성과”':'⏸️ 서울 집값 제자리… 시민들 관망',detail:(st.week)+'주차 '+opt.text+' 시행. '+(opt.reason==='policyLag'?'공공임대 공급 또는 다주택자 보유세 정책은 매매시장에 즉각적인 공급 충격을 주지 않아 이번 주 시세가 유지됐습니다. ':'')+'서울 평균 '+money(old)+' → '+money(st.price)+'. 지지율 '+(aDelta>=0?'+':'')+aDelta+'%p.'};
 st.history.unshift({week:st.week,policy:opt.text,rate,aDelta,kind});st.history=st.history.slice(0,40);st.result=rs;
 if(st.approval===0)st.end='impeached';else if(st.price>=CEILING)st.end='ceiling';else if(st.approval===100)st.end='win';else if(st.week>=MAX_WEEKS)st.end='timeout';persist();render();
 }
